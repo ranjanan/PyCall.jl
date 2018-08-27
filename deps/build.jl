@@ -31,7 +31,7 @@ pysys(python::AbstractString, var::AbstractString) = chomp(readstring(`$python -
 
 #########################################################################
 
-const dlprefix = @windows? "" : "lib"
+dlprefix = @windows? "" : "lib"
 
 # return libpython name, libpython pointer
 function find_libpython(python::AbstractString)
@@ -84,6 +84,7 @@ function find_libpython(python::AbstractString)
                     return (Libdl.dlopen(libpath_lib,
                                          Libdl.RTLD_LAZY|Libdl.RTLD_DEEPBIND|Libdl.RTLD_GLOBAL),
                             libpath_lib)
+                catch
                 end
             end
         end
@@ -97,6 +98,7 @@ function find_libpython(python::AbstractString)
         try
             return (Libdl.dlopen(lib, Libdl.RTLD_LAZY|Libdl.RTLD_DEEPBIND|Libdl.RTLD_GLOBAL),
                     lib)
+        catch
         end
     end
     error("Couldn't find libpython; check your PYTHON environment variable")
@@ -107,7 +109,7 @@ end
 include("depsutils.jl")
 #########################################################################
 
-const python = try
+python = try
     let py = get(ENV, "PYTHON", isfile("PYTHON") ? readchomp("PYTHON") : "python"), vers = convert(VersionNumber, pyconfigvar(py,"VERSION","0.0"))
         if vers < v"2.7"
             error("Python version $vers < 2.7 is not supported")
@@ -125,11 +127,11 @@ if use_conda
     Conda.add("numpy")
 end
 
-const (libpython, libpy_name) = find_libpython(python)
-const programname = pysys(python, "executable")
+(libpython, libpy_name) = find_libpython(python)
+programname = pysys(python, "executable")
 
 # cache the Python version as a Julia VersionNumber
-const pyversion = convert(VersionNumber, split(Py_GetVersion(libpython))[1])
+pyversion = convert(VersionNumber, split(Py_GetVersion(libpython))[1])
 
 info("PyCall is using $python (Python $pyversion) at $programname, libpython = $libpy_name")
 
